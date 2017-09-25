@@ -1,9 +1,10 @@
-import React, { Component } from 'react'
-import PropTypes from 'prop-types'
-import { connect } from 'react-redux'
-import { selectReddit, fetchPostsIfNeeded, invalidateReddit } from '../actions'
-import Picker from '../components/Picker'
-import Posts from '../components/Posts'
+import React, { Component } from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { requestCategories, receiveCategories, selectReddit, fetchPostsIfNeeded, invalidateReddit } from '../actions';
+import Picker from '../components/Picker';
+import Posts from '../components/Posts';
+import fetchCategories from '../utils/api';
 
 class App extends Component {
   static propTypes = {
@@ -11,82 +12,94 @@ class App extends Component {
     posts: PropTypes.array.isRequired,
     isFetching: PropTypes.bool.isRequired,
     lastUpdated: PropTypes.number,
-    dispatch: PropTypes.func.isRequired
-  }
+    dispatch: PropTypes.func.isRequired,
+    categories: PropTypes.string.isRequired,
+  };
 
   componentDidMount() {
-    const { dispatch, selectedReddit } = this.props
-    dispatch(fetchPostsIfNeeded(selectedReddit))
+    const { dispatch, selectedReddit } = this.props;
+    dispatch(fetchPostsIfNeeded(selectedReddit));
+
+    dispatch(requestCategories());
+    fetchCategories().then((data) => {
+      console.log(data);
+      dispatch(receiveCategories(data));
+    });
   }
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.selectedReddit !== this.props.selectedReddit) {
-      const { dispatch, selectedReddit } = nextProps
-      dispatch(fetchPostsIfNeeded(selectedReddit))
+      const { dispatch, selectedReddit } = nextProps;
+      dispatch(fetchPostsIfNeeded(selectedReddit));
     }
   }
 
   handleChange = nextReddit => {
-    this.props.dispatch(selectReddit(nextReddit))
-  }
+    this.props.dispatch(selectReddit(nextReddit));
+  };
 
   handleRefreshClick = e => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const { dispatch, selectedReddit } = this.props
-    dispatch(invalidateReddit(selectedReddit))
-    dispatch(fetchPostsIfNeeded(selectedReddit))
-  }
+    const { dispatch, selectedReddit } = this.props;
+    dispatch(invalidateReddit(selectedReddit));
+    dispatch(fetchPostsIfNeeded(selectedReddit));
+  };
 
   render() {
-    const { selectedReddit, posts, isFetching, lastUpdated } = this.props
-    const isEmpty = posts.length === 0
+    const { selectedReddit, posts, isFetching, lastUpdated, categories } = this.props;
+    const isEmpty = posts.length === 0;
     return (
       <div>
+        <p>
+          Talking to the backend yields these categories: <br/>
+          {categories}
+        </p>
         <Picker value={selectedReddit}
                 onChange={this.handleChange}
-                options={[ 'reactjs', 'frontend' ]} />
+                options={['reactjs', 'frontend']}/>
         <p>
           {lastUpdated &&
-            <span>
+          <span>
               Last updated at {new Date(lastUpdated).toLocaleTimeString()}.
-              {' '}
+            {' '}
             </span>
           }
           {!isFetching &&
-            <button onClick={this.handleRefreshClick}>
-              Refresh
-            </button>
+          <button onClick={this.handleRefreshClick}>
+            Refresh
+          </button>
           }
         </p>
         {isEmpty
           ? (isFetching ? <h2>Loading...</h2> : <h2>Empty.</h2>)
           : <div style={{ opacity: isFetching ? 0.5 : 1 }}>
-              <Posts posts={posts} />
-            </div>
+            <Posts posts={posts}/>
+          </div>
         }
       </div>
-    )
+    );
   }
 }
 
 const mapStateToProps = state => {
-  const { selectedReddit, postsByReddit } = state
+  const { selectedReddit, postsByReddit, categories } = state;
   const {
     isFetching,
     lastUpdated,
-    items: posts
+    items: posts,
   } = postsByReddit[selectedReddit] || {
     isFetching: true,
-    items: []
-  }
+    items: [],
+  };
 
   return {
     selectedReddit,
     posts,
     isFetching,
-    lastUpdated
-  }
-}
+    lastUpdated,
+    categories,
+  };
+};
 
-export default connect(mapStateToProps)(App)
+export default connect(mapStateToProps)(App);

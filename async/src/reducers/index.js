@@ -1,65 +1,78 @@
-import { combineReducers } from 'redux'
+import { combineReducers } from 'redux';
 import {
+  REQUEST_CATEGORIES, RECEIVE_CATEGORIES,
   SELECT_REDDIT, INVALIDATE_REDDIT,
-  REQUEST_POSTS, RECEIVE_POSTS
-} from '../actions'
+  REQUEST_POSTS, RECEIVE_POSTS,
+} from '../actions';
 
 const selectedReddit = (state = 'reactjs', action) => {
   switch (action.type) {
     case SELECT_REDDIT:
-      return action.reddit
+      return action.reddit;
     default:
-      return state
+      return state;
   }
-}
+};
 
 const posts = (state = {
   isFetching: false,
   didInvalidate: false,
-  items: []
+  items: [],
 }, action) => {
   switch (action.type) {
     case INVALIDATE_REDDIT:
       return {
         ...state,
-        didInvalidate: true
-      }
+        didInvalidate: true,
+      };
     case REQUEST_POSTS:
       return {
         ...state,
         isFetching: true,
-        didInvalidate: false
-      }
+        didInvalidate: false,
+      };
     case RECEIVE_POSTS:
       return {
         ...state,
         isFetching: false,
         didInvalidate: false,
         items: action.posts,
-        lastUpdated: action.receivedAt
-      }
+        lastUpdated: action.receivedAt,
+      };
     default:
-      return state
+      return state;
   }
-}
+};
 
-const postsByReddit = (state = { }, action) => {
+const postsByReddit = (state = {}, action) => {
   switch (action.type) {
     case INVALIDATE_REDDIT:
     case RECEIVE_POSTS:
     case REQUEST_POSTS:
       return {
         ...state,
-        [action.reddit]: posts(state[action.reddit], action)
-      }
+        [action.reddit]: posts(state[action.reddit], action),
+      };
     default:
-      return state
+      return state;
   }
-}
+};
+
+const categories = (state = '', action) => {
+  switch (action.type) {
+    case RECEIVE_CATEGORIES:
+      return action.categories;
+    case REQUEST_CATEGORIES:
+      return state;
+    default:
+      return state;
+  }
+};
 
 const rootReducer = combineReducers({
   postsByReddit,
-  selectedReddit
-})
+  selectedReddit,
+  categories,
+});
 
-export default rootReducer
+export default rootReducer;
